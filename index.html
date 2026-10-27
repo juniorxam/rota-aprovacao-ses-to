@@ -61,7 +61,21 @@ const questions=[
 {topic:"SUS e Políticas",q:"A auditoria em saúde pode ter como finalidade:",o:["Apenas punir profissionais","Examinar conformidade, registros, processos e uso de recursos","Substituir todo monitoramento","Dispensar critérios e documentação"],a:1,e:"A auditoria examina evidências de conformidade e processos de acordo com seu escopo."},
 {topic:"Gestão Pública",q:"Um indicador útil deve:",o:["Ser impossível de medir","Relacionar-se ao objetivo e ter definição e fonte claras","Ser escolhido apenas por facilidade","Substituir análise contextual"],a:1,e:"Indicadores devem ser relevantes, definidos e interpretáveis, considerando o contexto."}
 ];
-const videos=[["Planejamento estratégico, BSC e resultados","https://www.youtube.com/results?search_query=planejamento+estrat%C3%A9gico+BSC+gest%C3%A3o+por+resultados+concursos"],["Gestão por competências e CHA","https://www.youtube.com/results?search_query=gest%C3%A3o+por+compet%C3%AAncias+CHA+concursos+FGV"],["Lei 8.080 — questões FGV","https://www.youtube.com/results?search_query=Lei+8080+quest%C3%B5es+FGV+comentadas+2026"],["Lei 8.142 — questões FGV","https://www.youtube.com/results?search_query=Lei+8142+quest%C3%B5es+FGV+comentadas"],["Decreto 7.508 — aula e questões","https://www.youtube.com/results?search_query=Decreto+7508+2011+quest%C3%B5es+FGV"],["Lei 14.133 — dispensa e inexigibilidade","https://www.youtube.com/results?search_query=Lei+14133+dispensa+inexigibilidade+quest%C3%B5es+FGV"],["Portarias de Consolidação 1 a 6","https://www.youtube.com/results?search_query=Portarias+de+Consolida%C3%A7%C3%A3o+GM+MS+1+a+6+concursos"]];
+const videos=[
+["Planejamento estratégico e BSC","https://www.youtube.com/results?search_query=planejamento+estrat%C3%A9gico+BSC+aula+concursos+FGV"],
+["Eficiência, eficácia e efetividade","https://www.youtube.com/results?search_query=efici%C3%AAncia+efic%C3%A1cia+efetividade+administra%C3%A7%C3%A3o+p%C3%BAblica+aula"],
+["Reengenharia, estrutura e cultura organizacional","https://www.youtube.com/results?search_query=reengenharia+estrutura+cultura+organizacional+aula+concursos"],
+["Gestão por competências e CHA","https://www.youtube.com/results?search_query=gest%C3%A3o+por+compet%C3%AAncias+CHA+aula+concursos+FGV"],
+["Complexidade e espaço ocupacional","https://www.youtube.com/results?search_query=complexidade+espa%C3%A7o+ocupacional+gest%C3%A3o+por+compet%C3%AAncias+aula"],
+["Comunicação, liderança e redes","https://www.youtube.com/results?search_query=comunica%C3%A7%C3%A3o+lideran%C3%A7a+redes+gest%C3%A3o+pessoas+aula+concursos"],
+["Princípios constitucionais do SUS","https://www.youtube.com/results?search_query=Constitui%C3%A7%C3%A3o+Federal+artigos+196+200+SUS+aula+concursos"],
+["Lei 8.080/1990","https://www.youtube.com/results?search_query=Lei+8080+1990+aula+completa+quest%C3%B5es+concursos"],
+["Lei 8.142/1990 e controle social","https://www.youtube.com/results?search_query=Lei+8142+1990+Conselho+Confer%C3%AAncia+Sa%C3%BAde+aula+concursos"],
+["Decreto 7.508/2011","https://www.youtube.com/results?search_query=Decreto+7508+2011+aula+Regi%C3%A3o+de+Sa%C3%BAde+concursos"],
+["Auditoria, monitoramento e avaliação em saúde","https://www.youtube.com/results?search_query=auditoria+monitoramento+avalia%C3%A7%C3%A3o+em+sa%C3%BAde+aula+concursos"],
+["Lei 14.133/2021: contratação direta","https://www.youtube.com/results?search_query=Lei+14133+dispensa+inexigibilidade+contrata%C3%A7%C3%A3o+direta+aula+concursos"],
+["Portarias de Consolidação GM/MS 1 a 6","https://www.youtube.com/results?search_query=Portarias+de+Consolida%C3%A7%C3%A3o+GM+MS+1+2+3+4+5+6+2017+aula+concurso"]
+];
 const KEY="rota_ses_to_gestor_v2";
 let state={tasks:{},answers:{},simAnswers:{},simGraded:false};
 try { const saved=JSON.parse(localStorage.getItem(KEY)||"{}"); state={...state,...saved}; } catch(e) {}
@@ -96,7 +110,7 @@ function renderPlan(){
 }
 function renderLessons(){
  const root=document.getElementById("lessonList");if(!root)return;
- root.innerHTML=lessons.map((l,i)=>"<details class='card lesson'><summary><span class='pill'>"+l.topic+"</span> &nbsp;"+l.title+"</summary><p>"+l.body+"</p><ul>"+l.points.map(p=>"<li>"+p+"</li>").join("")+"</ul><div class='callout'><strong>Pegadinha para lembrar</strong> "+l.trap+"</div><button type='button' class='button secondary' data-practice='"+i+"'>Treinar assunto</button></details>").join("");
+ root.innerHTML=lessons.map((l,i)=>{const video=videos[i];return "<details class='card lesson'><summary><span class='pill'>"+l.topic+"</span> &nbsp;"+l.title+"</summary><p>"+l.body+"</p><ul>"+l.points.map(p=>"<li>"+p+"</li>").join("")+"</ul><div class='callout'><strong>Pegadinha para lembrar</strong> "+l.trap+"</div><div class='row' style='flex-wrap:wrap;margin-top:12px'><a class='button secondary' target='_blank' rel='noopener' href='"+(video?video[1]:"https://www.youtube.com/results?search_query="+encodeURIComponent(l.title+" aula concursos"))+"'>▶ Ver videoaulas</a><button type='button' class='button secondary' data-practice='"+i+"'>Treinar assunto</button></div></details>";}).join("");
  root.querySelectorAll("[data-practice]").forEach(b=>b.addEventListener("click",()=>{const l=lessons[Number(b.dataset.practice)];go("questoes");const filter=document.getElementById("topicFilter");if(filter){filter.value=l.topic==="Gestão Pública"?"Gestão Pública":l.topic==="Gestão de Pessoas"?"Gestão de Pessoas":l.topic==="Legislação"?"Legislação":"SUS e Políticas";}renderQuestions();}));
 }
 function renderQuestions(){
@@ -119,5 +133,5 @@ const restart=document.getElementById("restartSim");if(restart)restart.addEventL
 const topicFilter=document.getElementById("topicFilter");if(topicFilter)topicFilter.addEventListener("change",renderQuestions);
 const statusFilter=document.getElementById("statusFilter");if(statusFilter)statusFilter.addEventListener("change",renderQuestions);
 const reset=document.getElementById("resetQuestions");if(reset)reset.addEventListener("click",()=>{if(confirm("Apagar respostas do banco de questões?")){state.answers={};save();renderQuestions();}});
-const videoRoot=document.getElementById("videoLinks");if(videoRoot)videoRoot.innerHTML=videos.map(v=>"<div class='resource'><div><strong>"+v[0]+"</strong><small>Busca de videoaulas no YouTube</small></div><a target='_blank' rel='noopener' href='"+v[1]+"'>Assistir ↗</a></div>").join("");
+const videoRoot=document.getElementById("videoLinks");if(videoRoot)videoRoot.innerHTML=videos.map(v=>"<div class='resource'><div><strong>"+v[0]+"</strong><small>Resultados de videoaulas no YouTube</small></div><a target='_blank' rel='noopener' href='"+v[1]+"'>Ver aulas ↗</a></div>").join("");
 renderPlan();renderLessons();renderQuestions();renderSim();updateStats();</script></body></html>
