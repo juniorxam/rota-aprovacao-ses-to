@@ -110,15 +110,17 @@ const videos=[
 ["Portarias de Consolidação GM/MS 1 a 6","https://www.youtube.com/results?search_query=Portarias+de+Consolida%C3%A7%C3%A3o+GM+MS+1+2+3+4+5+6+2017+aula+concurso"]
 ];
 const KEY="rota_ses_to_gestor_v2";
-let state={tasks:{},answers:{},simAnswers:{},simGraded:false};
+let state={tasks:{},answers:{},simAnswers:{},simGraded:false,simQuestionIds:[],version:3,flashIndex:0,flashRevealed:false};
 try { const saved=JSON.parse(localStorage.getItem(KEY)||"{}"); state={...state,...saved}; } catch(e) {}
-state.tasks=state.tasks||{}; state.answers=state.answers||{}; state.simAnswers=state.simAnswers||{};
+state.tasks=state.tasks||{}; state.answers=state.answers||{}; state.simAnswers=state.simAnswers||{}; state.simQuestionIds=state.simQuestionIds||[];
+if((state.version||1)<3){state.simAnswers={};state.simGraded=false;state.simQuestionIds=[];state.version=3;}
+if(state.simQuestionIds.length!==20){state.simQuestionIds=Array.from({length:questions.length},(_,i)=>i).sort(()=>Math.random()-.5).slice(0,20);state.simAnswers={};state.simGraded=false;}
 let selectedDay=0;
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} updateStats(); }
 function go(id){
  document.querySelectorAll(".section").forEach(el=>el.classList.toggle("active",el.id===id));
  document.querySelectorAll(".nav").forEach(el=>el.classList.toggle("active",el.dataset.view===id));
- if(id==="plano")renderPlan(); if(id==="aulas")renderLessons(); if(id==="questoes")renderQuestions(); if(id==="simulado")renderSim(); if(id==="erros")renderErrors(); if(id==="flashcards")renderFlashcards();
+ if(id==="plano")renderPlan(); if(id==="aulas")renderLessons(); if(id==="questoes")renderQuestions(); if(id==="simulado")renderSim(); if(id==="erros")renderErrors(); if(id==="flashcards")renderFlashcards(); if(id==="erros")renderErrors(); if(id==="flashcards")renderFlashcards();
  window.scrollTo({top:0,behavior:"smooth"});
 }
 document.querySelectorAll(".nav[data-view]").forEach(el=>el.addEventListener("click",()=>go(el.dataset.view)));
@@ -155,16 +157,37 @@ function renderQuestions(){
 }
 function renderSim(){
  const root=document.getElementById("simList");if(!root)return;
- root.innerHTML=questions.map((q,i)=>"<article class='qcard'><div><span class='pill'>"+q.topic+"</span> <span class='small'>"+(i+1)+"/20</span></div><p class='qtitle'>"+q.q+"</p><div class='options'>"+q.o.map((o,j)=>"<button type='button' class='option "+(state.simAnswers[i]===j?"selected ":"")+(state.simGraded&&j===q.a?"correct ":"")+(state.simGraded&&state.simAnswers[i]===j&&j!==q.a?"wrong":"")+"' data-sim='"+i+"' data-opt='"+j+"' "+(state.simGraded?"disabled":"")+"><span class='letter'>"+String.fromCharCode(65+j)+"</span><span>"+o+"</span></button>").join("")+"</div>"+(state.simGraded?"<div class='explain'><b>"+(state.simAnswers[i]===q.a?"Correto.":"Resposta: "+String.fromCharCode(65+q.a)+".")+"</b> "+q.e+"</div>":"")+"</article>").join("");
+ const simQuestions=state.simQuestionIds.map(id=>questions[id]).filter(Boolean);
+ root.innerHTML=simQuestions.map((q,i)=>"<article class='qcard'><div><span class='pill'>"+q.topic+"</span> <span class='small'>"+(i+1)+"/20</span></div><p class='qtitle'>"+q.q+"</p><div class='options'>"+q.o.map((o,j)=>"<button type='button' class='option "+(state.simAnswers[i]===j?"selected ":"")+(state.simGraded&&j===q.a?"correct ":"")+(state.simGraded&&state.simAnswers[i]===j&&j!==q.a?"wrong":"")+"' data-sim='"+i+"' data-opt='"+j+"' "+(state.simGraded?"disabled":"")+"><span class='letter'>"+String.fromCharCode(65+j)+"</span><span>"+o+"</span></button>").join("")+"</div>"+(state.simGraded?"<div class='explain'><b>"+(state.simAnswers[i]===q.a?"Correto.":"Resposta: "+String.fromCharCode(65+q.a)+".")+"</b> "+q.e+"</div>":"")+"</article>").join("");
  const count=Object.keys(state.simAnswers).length, progress=document.getElementById("simProgress"),bar=document.getElementById("simBar"),result=document.getElementById("simResult");
  if(progress)progress.textContent=count+" de 20 respondidas";if(bar)bar.style.width=(count/20*100)+"%";
- if(result)result.innerHTML=state.simGraded?"<h2>Resultado: "+questions.filter((q,i)=>state.simAnswers[i]===q.a).length+"/20 ("+Math.round(questions.filter((q,i)=>state.simAnswers[i]===q.a).length/20*100)+"%)</h2><p>Leia os comentários, anote os erros e refaça as questões erradas.</p>":"";
+ const score=simQuestions.filter((q,i)=>state.simAnswers[i]===q.a).length;
+ if(result)result.innerHTML=state.simGraded?"<h2>Resultado: "+score+"/20 ("+Math.round(score/20*100)+"%)</h2><p>Leia os comentários, anote os erros e refaça as questões erradas.</p>":"<p class='small'>O conjunto de 20 questões é sorteado do banco para variar as tentativas.</p>";
  root.querySelectorAll("[data-sim]").forEach(b=>b.addEventListener("click",()=>{if(state.simGraded)return;state.simAnswers[Number(b.dataset.sim)]=Number(b.dataset.opt);save();renderSim();}));
 }
 const grade=document.getElementById("gradeSim");if(grade)grade.addEventListener("click",()=>{state.simGraded=true;save();renderSim();});
-const restart=document.getElementById("restartSim");if(restart)restart.addEventListener("click",()=>{if(confirm("Reiniciar o simulado e apagar suas respostas?")){state.simAnswers={};state.simGraded=false;save();renderSim();}});
+const restart=document.getElementById("restartSim");if(restart)restart.addEventListener("click",()=>{if(confirm("Reiniciar o simulado e sortear outras 20 questões?")){state.simAnswers={};state.simGraded=false;state.simQuestionIds=Array.from({length:questions.length},(_,i)=>i).sort(()=>Math.random()-.5).slice(0,20);save();renderSim();}});
 const topicFilter=document.getElementById("topicFilter");if(topicFilter)topicFilter.addEventListener("change",renderQuestions);
 const statusFilter=document.getElementById("statusFilter");if(statusFilter)statusFilter.addEventListener("change",renderQuestions);
 const reset=document.getElementById("resetQuestions");if(reset)reset.addEventListener("click",()=>{if(confirm("Apagar respostas do banco de questões?")){state.answers={};save();renderQuestions();}});
+function renderErrors(){
+ const root=document.getElementById("wrongList"),count=document.getElementById("wrongCount"),analysis=document.getElementById("subjectAnalysis");if(!root)return;
+ const wrong=questions.map((q,i)=>({...q,i})).filter(q=>state.answers[q.i]!==undefined&&state.answers[q.i]!==q.a);
+ if(count)count.textContent=wrong.length+" questão(ões) para revisar";
+ root.innerHTML=wrong.length?wrong.map(q=>"<article class='qcard'><div><span class='pill'>"+q.topic+"</span> <span class='small'>Questão "+(q.i+1)+"</span></div><p class='qtitle'>"+q.q+"</p><div class='explain'><b>Resposta correta: "+String.fromCharCode(65+q.a)+" — "+q.o[q.a]+"</b><br>"+q.e+"</div><button type='button' class='button secondary' data-error-practice='"+q.i+"'>Ver no banco de questões</button></article>").join(""):"<div class='card'>Nenhum erro registrado no momento. Responda algumas questões no banco para personalizar esta revisão.</div>";
+ root.querySelectorAll("[data-error-practice]").forEach(b=>b.addEventListener("click",()=>{go("questoes");const f=document.getElementById("topicFilter");if(f)f.value="all";const st=document.getElementById("statusFilter");if(st)st.value="all";renderQuestions();const target=document.querySelector("[data-q='"+b.dataset.errorPractice+"']");if(target)target.scrollIntoView({behavior:"smooth",block:"center"});}));
+ if(analysis){const topics=[...new Set(questions.map(q=>q.topic))];analysis.innerHTML="<h3>Seu desempenho por assunto</h3>"+topics.map(topic=>{const ids=questions.map((q,i)=>({q,i})).filter(x=>x.q.topic===topic&&state.answers[x.i]!==undefined);const ok=ids.filter(x=>state.answers[x.i]===x.q.a).length;const pct=ids.length?Math.round(ok/ids.length*100):null;return "<div style='padding:9px 0;border-bottom:1px solid var(--line)'><div class='row'><b>"+topic+"</b><span class='small'>"+(ids.length?pct+"% ("+ok+"/"+ids.length+")":"Ainda sem dados")+"</span></div><div class='progress'><i style='width:"+(pct||0)+"%'></i></div></div>";}).join("")+"<p class='small'>A análise considera as respostas mais recentes do banco. Questões do simulado são contabilizadas separadamente.</p>";}
+}
+const retryWrong=document.getElementById("retryWrong");if(retryWrong)retryWrong.addEventListener("click",()=>{go("questoes");const f=document.getElementById("topicFilter");if(f)f.value="all";const st=document.getElementById("statusFilter");if(st)st.value="wrong";renderQuestions();});
+let flashIndex=Number(state.flashIndex)||0;
+function renderFlashcards(){
+ const box=document.getElementById("flashcardBox");if(!box)return;
+ const cards=lessons.map(l=>({title:l.title,topic:l.topic,front:"Explique com suas palavras: "+l.title+"?",back:l.body+"\n\nPontos-chave: "+l.points.join(" ")}));
+ flashIndex=((flashIndex%cards.length)+cards.length)%cards.length;const c=cards[flashIndex];
+ box.innerHTML="<div class='row'><span class='pill'>"+c.topic+"</span><span class='small'>Cartão "+(flashIndex+1)+" de "+cards.length+"</span></div><h3>"+c.title+"</h3><div class='callout'><strong>"+(state.flashRevealed?"Resposta":"Pergunta")+"</strong><p style='white-space:pre-line'>"+(state.flashRevealed?c.back:c.front)+"</p></div><div class='row' style='flex-wrap:wrap'><button type='button' class='button secondary' id='flashPrev'>← Anterior</button><button type='button' class='button' id='flashReveal'>"+(state.flashRevealed?"Ocultar resposta":"Revelar resposta")+"</button><button type='button' class='button secondary' id='flashNext'>Próximo →</button></div>";
+ document.getElementById("flashPrev").onclick=()=>{flashIndex--;state.flashIndex=flashIndex;state.flashRevealed=false;save();renderFlashcards();};
+ document.getElementById("flashNext").onclick=()=>{flashIndex++;state.flashIndex=flashIndex;state.flashRevealed=false;save();renderFlashcards();};
+ document.getElementById("flashReveal").onclick=()=>{state.flashRevealed=!state.flashRevealed;save();renderFlashcards();};
+}
 const videoRoot=document.getElementById("videoLinks");if(videoRoot)videoRoot.innerHTML=videos.map(v=>"<div class='resource'><div><strong>"+v[0]+"</strong><small>Resultados de videoaulas no YouTube</small></div><a target='_blank' rel='noopener' href='"+v[1]+"'>Ver aulas ↗</a></div>").join("");
 renderPlan();renderLessons();renderQuestions();renderSim();renderErrors();renderFlashcards();updateStats();</script></body></html>
